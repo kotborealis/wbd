@@ -2,6 +2,7 @@
 https://learnopencv.com/camera-calibration-using-opencv/
 https://docs.opencv.org/master/dc/dbb/tutorial_py_calibration.html
 https://medium.com/vacatronics/3-ways-to-calibrate-your-camera-using-opencv-and-python-395528a51615
+https://github.com/abidrahmank/OpenCV2-Python-Tutorials/blob/master/source/py_tutorials/py_calib3d/py_calibration/py_calibration.rst
 
 CalibrationCoefficients:
 camera_matrix - Внутренняя матрица камеры.
@@ -11,17 +12,18 @@ rotation_vector - Вращение указано как вектор 3×13 × 1
 translation_vector - 3×1 Translation vector(вектор смещения).
 """
 import glob
-from typing import NamedTuple
+import os
+from typing import NamedTuple, NoReturn
 from pathlib import Path
 
 import numpy as np
 import cv2
 
-CHECKERBOARD = (6, 9)
-CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
-current_dir = str(Path.cwd())
-home_prj_dir_path = current_dir[:current_dir.find('wbd') + 3]
+CHECKERBOARD: tuple = (6, 9)
+CRITERIA: tuple = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+CALIBRATION_DIR: str = os.path.join('.', 'calibration')
+DEBUG_CALIBRATION_DIR: str = os.path.join(CALIBRATION_DIR, '../lines_on_chessboard')
+WEIGHTS_PATH = os.path.join(CALIBRATION_DIR, 'weights.yml')
 
 
 class CalibrationCoefficients(NamedTuple):
@@ -33,16 +35,57 @@ class CalibrationCoefficients(NamedTuple):
     translation_vector: list
 
 
-def _draw_lines_on_chessboard(img, corners, filename):
-    """Using the obtained corners draws lines on a chessboard"""
-    img = cv2.drawChessboardCorners(img, CHECKERBOARD, corners, True)
-    cv2.imwrite(f'{home_prj_dir_path}/calibration/lines_on_chessboard/{filename}', img=img)
+def load_coefficients(mode: str):
+    """Loads camera matrix and distortion coefficients."""
+    cv_file = cv2.FileStorage(WEIGHTS_PATH, cv2.FILE_STORAGE_READ)
+
+    # note we also have to specify the type to retrieve other wise we only get a
+    # FileNode object back instead of a matrix
+    camera_matrix = cv_file.getNode(f'K_{mode}').mat()
+    dist_matrix = cv_file.getNode(f'D_{mode}').mat()
+
+    cv_file.release()
+    return camera_matrix, dist_matrix
 
 
-def _camera_calibration(debug_mode: bool = False) -> CalibrationCoefficients:
-    """Gets calibration coefficients using test images(from ./calibration directory) with chessboard pattern."""
+def get_calibration_weights(img_dir: str, mode: str) -> NoReturn:
+    """Save the camera matrix and the distortion coefficients to given path/file."""
+
+    def update_coefficients_in_weights():
+        coefficients: CalibrationCoefficients = _get_calibration_coefficients(img_dir=img_dir)
+
+        cv_file = cv2.FileStorage(WEIGHTS_PATH, cv2.FILE_STORAGE_APPEND)
+
+        cv_file.write(f'K_{mode}', coefficients.camera_matrix)
+        cv_file.write(f'D_{mode}', coefficients.dist_coeffs)
+
+        # Closes the file and releases all the memory buffers
+        cv_file.release()
+        return coefficients.camera_matrix, coefficients.dist_coeffs
+
+    _cm = None
+    _dm = None
+
+    if os.path.exists(WEIGHTS_PATH):
+        _cm, _dm = load_coefficients(mode)
+
+    if _cm is None or _dm is None:
+        # There are no such coefficients or such file
+        _cm, _dm = update_coefficients_in_weights()
+
+    return _cm, _dm
+
+
+def _get_calibration_coefficients(img_dir: str, debug_mode: bool = False) -> CalibrationCoefficients:
+    """
+    Gets calibration coefficients using test images(from ./calibration directory) with chessboard pattern.
+
+    :param img_dir: name of the directory with images for calibration.
+        Dir must be included in ./calibration/
+    """
     if debug_mode:
-        Path(f"{home_prj_dir_path}/calibration/lines_on_chessboard").mkdir(parents=True, exist_ok=True)
+        Path(DEBUG_CALIBRATION_DIR).mkdir(parents=True, exist_ok=True)
+        Path(os.path.join(DEBUG_CALIBRATION_DIR, img_dir)).mkdir(parents=True, exist_ok=True)
 
     # Вектор для хранения векторов трехмерных точек для каждого изображения шахматной доски
     objpoints = []
@@ -54,7 +97,7 @@ def _camera_calibration(debug_mode: bool = False) -> CalibrationCoefficients:
     objp[0, :, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
     prev_img_shape = None
 
-    images = glob.glob(f'{home_prj_dir_path}/calibration/chessboard_calibration_imgs/*.jpg')
+    images = glob.glob(os.path.join(CALIBRATION_DIR, img_dir, '*.jpg'))
     for file in images:
         img = cv2.imread(file)
         img_in_gray_colors = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -70,7 +113,7 @@ def _camera_calibration(debug_mode: bool = False) -> CalibrationCoefficients:
 
             imgpoints.append(corners2)
             if debug_mode:
-                _draw_lines_on_chessboard(img=img, corners=corners2, filename=file[file.rfind('/') + 1:])
+                _draw_lines_on_chessboard(img=img, corners=corners2, filename=file[file.rfind(img_dir):])
 
         # Разрешение изображения
         if prev_img_shape is None:
@@ -82,41 +125,7 @@ def _camera_calibration(debug_mode: bool = False) -> CalibrationCoefficients:
     return CalibrationCoefficients(ret, mtx, dist, rvecs, tvecs)
 
 
-def _save_coefficients(coefficients: CalibrationCoefficients,
-                       weights_filename=f'{home_prj_dir_path}/weights'):
-    """Save the camera matrix and the distortion coefficients to given path/file."""
-    cv_file = cv2.FileStorage(weights_filename, cv2.FILE_STORAGE_WRITE)
-    cv_file.write('K', coefficients.camera_matrix)
-    cv_file.write('D', coefficients.dist_coeffs)
-
-    # note you *release* you don't close() a FileStorage object
-    cv_file.release()
-
-
-def load_coefficients(weights_file_path=f'{home_prj_dir_path}/weights'):
-    """Loads camera matrix and distortion coefficients."""
-    cv_file = cv2.FileStorage(weights_file_path, cv2.FILE_STORAGE_READ)
-
-    # note we also have to specify the type to retrieve other wise we only get a
-    # FileNode object back instead of a matrix
-    camera_matrix = cv_file.getNode('K').mat()
-    dist_matrix = cv_file.getNode('D').mat()
-
-    cv_file.release()
-    return camera_matrix, dist_matrix
-
-
-def undistort_img(filename: str, output_path: str):
-    """
-    Undistort image using weights from yaml file
-
-    :param filename: path to the source file
-    :param output_path: where to save the file after processing(transmitted without output filename, only path)
-    """
-    mtx, dist = load_coefficients()
-
-    original = cv2.imread(filename)
-    dst = cv2.undistort(original, mtx, dist, None, None)
-
-    output_file_path: str = output_path + filename[filename.rfind('/') + 1:]
-    cv2.imwrite(output_file_path, dst)
+def _draw_lines_on_chessboard(img, corners, filename):
+    """Using the obtained corners draws lines on a chessboard"""
+    img = cv2.drawChessboardCorners(img, CHECKERBOARD, corners, True)
+    cv2.imwrite(os.path.join(DEBUG_CALIBRATION_DIR, filename), img=img)
