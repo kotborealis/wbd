@@ -1,4 +1,5 @@
-opencv-python
-numpy
+opencv-python~=4.5.4.60
+numpy~=1.21.4
 scipy
-requests
+requests~=2.26.0
+Pillow~=8.4.0
