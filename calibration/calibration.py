@@ -22,7 +22,7 @@ import cv2
 CHECKERBOARD: tuple = (6, 9)
 CRITERIA: tuple = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 CALIBRATION_DIR: str = os.path.join('.', 'calibration')
-DEBUG_CALIBRATION_DIR: str = os.path.join(CALIBRATION_DIR, '../lines_on_chessboard')
+DEBUG_CALIBRATION_DIR: str = os.path.join(CALIBRATION_DIR, 'lines_on_chessboard')
 WEIGHTS_PATH = os.path.join(CALIBRATION_DIR, 'weights.yml')
 
 

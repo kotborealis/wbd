@@ -1,10 +1,12 @@
 import os
+import sys
 import json
 import argparse
-import requests
+
 from typing import Optional
 from pathlib import Path
 
+import requests
 import cv2 as cv
 import numpy as np
 
@@ -37,11 +39,11 @@ elif args["image_rtsp"]:
     res, frame = cv.VideoCapture(args["image_rtsp"]).read()
     if not res:
         print("Failed to grab frame from specified rtsp stream")
-        exit(1)
+        sys.exit(1)
     original = frame
 else:
     print("Neither `--image-path`, `--image-url` or `--image-rtsp` was specified, use `--help` to print usage")
-    exit(1)
+    sys.exit(1)
 
 if args["calibrate"]:
     h, w = original.shape[:2]
@@ -103,8 +105,6 @@ elif args["mode"]:
                 tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
                 cv.imwrite(tmp_filename, result)
                 undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=args["output"].pop(0))
-
-                # cv.imwrite(args["output"].pop(0), result)
 
         idx = idx + 1
 

@@ -1,5 +1,6 @@
-import os.path
-
+import os
+from typing import Optional
+import cv2
 from .exceptions import UnsupportedCalibrationMode
 
 
@@ -11,8 +12,6 @@ def undistort_img(filename: str, output_path: str, mode: str):
     :param output_path: where to save the file after processing(transmitted without output filename, only path)
     :param mode: board side
     """
-    from typing import Optional
-    import cv2
     from .calibration import get_calibration_weights
 
     img_dir: Optional[str] = None
