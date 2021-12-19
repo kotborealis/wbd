@@ -8,7 +8,7 @@ Crops and corrects perspective of whiteboard from image.
 
 **Original**
 
-<img src="venv/original.jpeg" width="500">
+<img src="readme_photos/original.jpeg" width="500">
 
 **Right board, cropped and perspecrive wrapped**
 
