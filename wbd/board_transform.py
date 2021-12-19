@@ -23,7 +23,7 @@ def order_points(pts):
     return rect
 
 
-def four_point_transform(image, pts, aspectRatio):
+def four_point_transform(image, pts, aspectRatio, mode):
     # obtain a consistent order of the points and unpack them
     # individually
     rect = order_points(pts)
@@ -45,16 +45,33 @@ def four_point_transform(image, pts, aspectRatio):
     # (i.e. top-down view) of the image, again specifying points
     # in the top-left, top-right, bottom-right, and bottom-left
     # order
-    dst = np.array([
-        [0, 0],
-        [maxWidth - 1, 0],
-        [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype="float32")
+
+    # [WIDTH, HEIGHT]
+    # -----------------------------------
+    if mode == 'right':
+        # RIGHT
+        dst = np.array([
+            [0, 0],
+            [maxWidth - 4, 5],  # RIGHT TOP
+            [maxWidth - 16, maxHeight - 15],  # RIGHT BOTTOM
+            [4, maxHeight + 7]], dtype="float32")
+
+    # ----------------------------------
+    if mode == 'left':
+        # LEFT
+        dst = np.array([
+            [6.2, -7],
+            [maxWidth + 9, -10],  # RIGHT TOP
+            [maxWidth - 6, maxHeight + 6],  # RIGHT BOTTOM
+            [-18, maxHeight - 4.2]], dtype="float32")
+
+    # ----------------------------------
+
     # compute the perspective transform matrix and then apply it
     M = cv.getPerspectiveTransform(rect, dst)
     warped = cv.warpPerspective(image, M, (maxWidth, maxHeight))
     warpedAspectRatio = warped.shape[:2][1] / warped.shape[:2][0]
-    k = warpedAspectRatio/aspectRatio
+    k = warpedAspectRatio / aspectRatio
     warped = cv.resize(warped, (int(warped.shape[:2][1]), int(warped.shape[:2][0] * k)))
     # return the warped image
     return warped

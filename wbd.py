@@ -1,16 +1,26 @@
+import os
 import json
-from wbd import board_calibration, board_transform, postprocessing
-import cv2 as cv
-import numpy as np
 import argparse
 import requests
+from typing import Optional
+from pathlib import Path
+
+import cv2 as cv
+import numpy as np
+
+from wbd import board_calibration, board_transform, postprocessing, exceptions
+from calibration import undistort_img
+
+TMP_DIR = os.path.join('.', 'local')
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--image-path', help='Grab image from specified file')
 ap.add_argument('--image-url', help='Grab image from specified URL')
 ap.add_argument('--image-rtsp', help='Grab image from specified RTSP stream')
 ap.add_argument('--calibrate', help='Calibrate board points using GUI and save to specified file', default=False)
-ap.add_argument('--transform', help='Transform board using points from specified file(s)', nargs='*')
+# ap.add_argument('--transform', help='Transform board using points from specified file(s)', nargs='*')
+ap.add_argument('--mode',
+                help="Get the side of the board by passing one of the operating modes: ('left', 'right')", nargs='*')
 ap.add_argument('--output', help='Save transformed boards to specified file(s)', nargs='*')
 ap.add_argument('--output-original', help='Save original to specified file(s)')
 args = vars(ap.parse_args())
@@ -37,8 +47,8 @@ if args["calibrate"]:
     h, w = original.shape[:2]
     w_ = 1080
     h_ = 720
-    k_w = w/w_
-    k_h = h/h_
+    k_w = w / w_
+    k_h = h / h_
     preview = cv.resize(original, (w_, h_))
     points = board_calibration.board_calibration(preview)
 
@@ -53,17 +63,48 @@ if args["calibrate"]:
             }, f)
     else:
         print("Expected 4 points, got " + str(len(points)))
-elif args["transform"]:
+# elif args["transform"]:
+#     idx = 0
+#     for transform in args["transform"]:
+#         with open(transform) as f:
+#             data = json.load(f)
+#             points = np.array(data["points"], dtype="float32")
+#             result = board_transform.four_point_transform(original, points, data["aspectRatio"])
+#             result = postprocessing.postprocessing(result, data["brightness"], data["contrast"])
+#
+#             if args["output"] and len(args["output"]) > 0:
+#                 cv.imwrite(args["output"].pop(0), result)
+#
+#         idx = idx + 1
+elif args["mode"]:
     idx = 0
-    for transform in args["transform"]:
-        with open(transform) as f:
+    for mode in args["mode"]:
+        coefficients_filename: Optional[str] = None
+        if mode == 'right':
+            coefficients_filename = './board_right.json'
+        if mode == 'left':
+            coefficients_filename = './board_left.json'
+
+        if coefficients_filename is None:
+            raise exceptions.UnsupportedBoardMode
+
+        with open(coefficients_filename) as f:
             data = json.load(f)
             points = np.array(data["points"], dtype="float32")
-            result = board_transform.four_point_transform(original, points, data["aspectRatio"])
+            result = board_transform.four_point_transform(image=original, pts=points,
+                                                          aspectRatio=data["aspectRatio"],
+                                                          mode=mode.lower())
             result = postprocessing.postprocessing(result, data["brightness"], data["contrast"])
 
             if args["output"] and len(args["output"]) > 0:
-                cv.imwrite(args["output"].pop(0), result)
+                from time import time
+
+                Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
+                tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
+                cv.imwrite(tmp_filename, result)
+                undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=args["output"].pop(0))
+
+                # cv.imwrite(args["output"].pop(0), result)
 
         idx = idx + 1
 

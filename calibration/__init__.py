@@ -1,3 +1,5 @@
+import os.path
+
 from .exceptions import UnsupportedCalibrationMode
 
 
@@ -32,7 +34,7 @@ def undistort_img(filename: str, output_path: str, mode: str):
     # crop the image
     x, y, w, h = roi
     dst = dst[y:y + h, x:x + w]
-    # cv2.imwrite('calibresult.png', dst)
-    # убрать /
-    output_file_path: str = output_path + filename[filename.rfind('/') + 1:]
-    cv2.imwrite(output_file_path, dst)
+
+    if os.path.exists(filename):
+        os.remove(filename)
+    cv2.imwrite(output_path, dst)
