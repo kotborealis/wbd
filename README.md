@@ -8,12 +8,21 @@ Crops and corrects perspective of whiteboard from image.
 
 **Original**
 
-<img src="./original.jpg" width="500">
-
-**Left board, cropped and perspecrive wrapped**
-
-<img src="./out_left.jpg" width="500">
+<img src="venv/original.jpeg" width="500">
 
 **Right board, cropped and perspecrive wrapped**
 
-<img src="./out_right.jpg" width="500">
+<img src="readme_photos/out_right.jpg" width="500">
+
+**Right board, after calibration**
+
+<img src="readme_photos/calibrated_right.jpeg" width="500">
+
+**Left board, cropped and perspecrive wrapped**
+
+<img src="readme_photos/out_left.jpg" width="500">
+
+**Left board, after calibration**
+
+<img src="readme_photos/calibrated_left.jpeg" width="500">
+
