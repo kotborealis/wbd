@@ -66,6 +66,14 @@ def four_point_transform(image, pts, aspectRatio, mode):
             [-18, maxHeight - 4.2]], dtype="float32")
 
     # ----------------------------------
+    if mode == 'sheet':
+        # PRESENTATION SHEET
+        dst = np.array([
+            [0, 0],
+            [maxWidth - 1, 0],
+            [maxWidth - 1, maxHeight - 1],
+            [0, maxHeight - 1]], dtype="float32")
+    # ----------------------------------
 
     # compute the perspective transform matrix and then apply it
     M = cv.getPerspectiveTransform(rect, dst)

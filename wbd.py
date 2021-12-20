@@ -22,7 +22,7 @@ ap.add_argument('--image-rtsp', help='Grab image from specified RTSP stream')
 ap.add_argument('--calibrate', help='Calibrate board points using GUI and save to specified file', default=False)
 # ap.add_argument('--transform', help='Transform board using points from specified file(s)', nargs='*')
 ap.add_argument('--mode',
-                help="Get the side of the board by passing one of the operating modes: ('left', 'right')", nargs='*')
+                help="Get the side of the board by passing one of the operating modes: ('left', 'right', 'sheet')", nargs='*')
 ap.add_argument('--output', help='Save transformed boards to specified file(s)', nargs='*')
 ap.add_argument('--output-original', help='Save original to specified file(s)')
 args = vars(ap.parse_args())
@@ -86,6 +86,8 @@ elif args["mode"]:
             coefficients_filename = './board_right.json'
         if mode == 'left':
             coefficients_filename = './board_left.json'
+        if mode == 'sheet':
+            coefficients_filename = './sheet.json'
 
         if coefficients_filename is None:
             raise exceptions.UnsupportedBoardMode
@@ -99,12 +101,15 @@ elif args["mode"]:
             result = postprocessing.postprocessing(result, data["brightness"], data["contrast"])
 
             if args["output"] and len(args["output"]) > 0:
-                from time import time
-
-                Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
-                tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
-                cv.imwrite(tmp_filename, result)
-                undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=args["output"].pop(0))
+                if mode != 'sheet':
+                    from time import time
+                    
+                    Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
+                    tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
+                    cv.imwrite(tmp_filename, result)
+                    undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=args["output"].pop(0))
+                else:
+                    cv.imwrite(args["output"].pop(0), result)
 
         idx = idx + 1
 
