@@ -27,7 +27,9 @@ Crops and corrects perspective of whiteboard from image.
 <img src="readme_photos/calibrated_left.jpeg" width="500">
 
 **Postprocessing. Right board**
+
 <img src="readme_photos/postprocessing_right.png" width="500">
 
 **Postprocessing. Left board**
+
 <img src="readme_photos/postprocessing_left.png" width="500">
