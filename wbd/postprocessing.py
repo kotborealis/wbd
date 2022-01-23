@@ -16,6 +16,16 @@ from PIL import Image
 
 
 def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
+    """
+    Постобработка включает 2 этапа:
+       * Обрезка высветленного изображения
+       * Перевод записей на белый фон с удалением шумов
+
+    :param output_path: путь для итогового изображения.
+        Будет модифицирован добавлением префикса postprocessing к имени файла.
+    :param crop_weights: веса для обрезки кадра.
+    :param tmp_dir: временная директория для хранения промежуточных этапов постобработки
+    """
     # Prepare image - crop it, to leave only the whiteboard
     img = cv2.imread(output_path)
 
@@ -41,12 +51,19 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
     output_filename = output_path[:_back_indx] + 'postprocessing_' + output_path[_back_indx:]
     save(output_filename, labels, palette, (300, 300))
 
-    # if os.path.exists(tmp_filename):
-    #     os.remove(tmp_filename)
+    if os.path.exists(tmp_filename):
+        os.remove(tmp_filename)
 
 
 def apply_brightness_contrast(input_img: np.ndarray, brightness: Union[int, float] = 0,
                               contrast: Union[int, float] = 0):
+    """
+    Функция увеличивает контраст и яркость исходного изображения без ухудшения качества пикселей.
+
+    :param input_img: исходное изображение в формате массива.
+    :param brightness: коэффициент яркости.
+    :param contrast: коэффициент контраста.
+    """
     if brightness != 0:
         if brightness > 0:
             shadow = brightness
@@ -114,12 +131,11 @@ def save(output_filename: str, labels, palette: np.ndarray, dpi: tuple):
 
 
 def apply_palette(img, palette):
-    '''Apply the pallete to the given image. The first step is to set all
-background pixels to the background color; then, nearest-neighbor
-matching is used to map each foreground color to the closest one in
-the palette.
-
-    '''
+    """
+    Apply the pallete to the given image.
+    The first step is to set all background pixels to the background color;
+    then, nearest-neighbor matching is used to map each foreground color to the closest one in the palette.
+    """
 
     bg_color = tuple(palette[0])
 
