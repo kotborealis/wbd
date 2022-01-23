@@ -116,7 +116,7 @@ elif args["mode"]:
                     undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=output_path)
 
                     if args['postprocessing']:
-                        postprocessing(output_path=output_path, crop_weights=data["сrop_weights"])
+                        postprocessing(output_path=output_path, crop_weights=data["сrop_weights"], tmp_dir=TMP_DIR)
                 else:
                     cv.imwrite(args["output"].pop(0), result)
 
