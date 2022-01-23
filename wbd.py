@@ -10,7 +10,7 @@ import requests
 import cv2 as cv
 import numpy as np
 
-from wbd import board_calibration, board_transform, postprocessing, exceptions
+from wbd import board_calibration, four_point_transform, apply_brightness_contrast, UnsupportedBoardMode
 from calibration import undistort_img
 
 TMP_DIR = os.path.join('.', 'local')
@@ -52,7 +52,7 @@ if args["calibrate"]:
     k_w = w / w_
     k_h = h / h_
     preview = cv.resize(original, (w_, h_))
-    points = board_calibration.board_calibration(preview)
+    points = board_calibration(preview)
 
     if len(points) == 4:
         points = [(p_x * k_w, p_y * k_h) for p_x, p_y in points]
@@ -90,15 +90,15 @@ elif args["mode"]:
             coefficients_filename = './sheet.json'
 
         if coefficients_filename is None:
-            raise exceptions.UnsupportedBoardMode
+            raise UnsupportedBoardMode
 
         with open(coefficients_filename) as f:
             data = json.load(f)
             points = np.array(data["points"], dtype="float32")
-            result = board_transform.four_point_transform(image=original, pts=points,
+            result = four_point_transform(image=original, pts=points,
                                                           aspectRatio=data["aspectRatio"],
                                                           mode=mode.lower())
-            result = postprocessing.postprocessing(result, data["brightness"], data["contrast"])
+            result = apply_brightness_contrast(result, data["brightness"], data["contrast"])
 
             if args["output"] and len(args["output"]) > 0:
                 if mode != 'sheet':
