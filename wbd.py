@@ -22,8 +22,11 @@ ap.add_argument('--image-rtsp', help='Grab image from specified RTSP stream')
 ap.add_argument('--calibrate', help='Calibrate board points using GUI and save to specified file', default=False)
 # ap.add_argument('--transform', help='Transform board using points from specified file(s)', nargs='*')
 ap.add_argument('--mode',
-                help="Get the side of the board by passing one of the operating modes: ('left', 'right', 'sheet')", nargs='*')
+                help="Get the side of the board by passing one of the operating modes: ('left', 'right', 'sheet')",
+                nargs='*')
+ap.add_argument('--postprocessing', help="Execute image postprocessing", action='store_true')
 ap.add_argument('--output', help='Save transformed boards to specified file(s)', nargs='*')
+# ap.add_argument('--output-postprocessing', help='Save processed board to specified file')
 ap.add_argument('--output-original', help='Save original to specified file(s)')
 args = vars(ap.parse_args())
 
@@ -96,18 +99,33 @@ elif args["mode"]:
             data = json.load(f)
             points = np.array(data["points"], dtype="float32")
             result = four_point_transform(image=original, pts=points,
-                                                          aspectRatio=data["aspectRatio"],
-                                                          mode=mode.lower())
+                                          aspectRatio=data["aspectRatio"],
+                                          mode=mode.lower())
             result = apply_brightness_contrast(result, data["brightness"], data["contrast"])
 
             if args["output"] and len(args["output"]) > 0:
                 if mode != 'sheet':
                     from time import time
-                    
+
+                    output_path = args["output"].pop(0)
+
                     Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
                     tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
                     cv.imwrite(tmp_filename, result)
-                    undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=args["output"].pop(0))
+                    undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=output_path)
+
+                    if args['postprocessing']:
+                        img = cv.imread(output_path)
+
+                        # crop_weights[0] - up/down coefficients.
+                        # crop_weights[1] - left/right coefficients.
+                        crop_weights: list = data["сrop_weights"]
+                        original_shape: tuple = img.shape
+                        crop_img = img[crop_weights[0][0]:original_shape[0] + crop_weights[0][1],
+                                   crop_weights[1][0]:original_shape[1] + crop_weights[1][1]]
+
+                        _back_indx: int = output_path.rfind('/') + 1
+                        cv.imwrite(output_path[:_back_indx] + 'postprocessing_' + output_path[_back_indx:], crop_img)
                 else:
                     cv.imwrite(args["output"].pop(0), result)
 
