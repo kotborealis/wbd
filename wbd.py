@@ -25,7 +25,7 @@ ap.add_argument('--calibrate', help='Calibrate board points using GUI and save t
 ap.add_argument('--mode',
                 help="Get the side of the board by passing one of the operating modes: ('left', 'right', 'sheet')",
                 nargs='*')
-ap.add_argument('--postprocessing', help="Execute image postprocessing", action='store_true')
+# ap.add_argument('--postprocessing', help="Execute image postprocessing", action='store_true')
 ap.add_argument('--output', help='Save transformed boards to specified file(s)', nargs='*')
 # ap.add_argument('--output-postprocessing', help='Save processed board to specified file')
 ap.add_argument('--output-original', help='Save original to specified file(s)')
@@ -115,9 +115,7 @@ elif args["mode"]:
                     tmp_filename = os.path.join(TMP_DIR, f'tmp_{str(int(time()))}.png')
                     cv.imwrite(tmp_filename, result)
                     undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=output_path)
-
-                    if args['postprocessing']:
-                        postprocessing(output_path=output_path, crop_weights=data["сrop_weights"], tmp_dir=TMP_DIR)
+                    postprocessing(output_path=output_path, crop_weights=data["сrop_weights"], tmp_dir=TMP_DIR)
                 else:
                     cv.imwrite(args["output"].pop(0), result)
 
