@@ -11,7 +11,7 @@ import cv2 as cv
 import numpy as np
 
 from wbd import board_calibration, four_point_transform, \
-    apply_brightness_contrast, postprocessing, UnsupportedBoardMode
+    apply_brightness_contrast, postprocessing, unsharp_mask, UnsupportedBoardMode
 from calibration import undistort_img
 
 TMP_DIR = os.path.join('.', 'local')
@@ -102,6 +102,7 @@ elif args["mode"]:
             result = four_point_transform(image=original, pts=points,
                                           aspectRatio=data["aspectRatio"],
                                           mode=mode.lower())
+            result = unsharp_mask(image=result)
             result = apply_brightness_contrast(result, data["brightness"], data["contrast"])
 
             if args["output"] and len(args["output"]) > 0:
