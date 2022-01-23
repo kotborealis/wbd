@@ -10,7 +10,8 @@ import requests
 import cv2 as cv
 import numpy as np
 
-from wbd import board_calibration, four_point_transform, apply_brightness_contrast, UnsupportedBoardMode
+from wbd import board_calibration, four_point_transform, \
+    apply_brightness_contrast, postprocessing, UnsupportedBoardMode
 from calibration import undistort_img
 
 TMP_DIR = os.path.join('.', 'local')
@@ -115,17 +116,7 @@ elif args["mode"]:
                     undistort_img(filename=tmp_filename, mode=mode.lower(), output_path=output_path)
 
                     if args['postprocessing']:
-                        img = cv.imread(output_path)
-
-                        # crop_weights[0] - up/down coefficients.
-                        # crop_weights[1] - left/right coefficients.
-                        crop_weights: list = data["сrop_weights"]
-                        original_shape: tuple = img.shape
-                        crop_img = img[crop_weights[0][0]:original_shape[0] + crop_weights[0][1],
-                                   crop_weights[1][0]:original_shape[1] + crop_weights[1][1]]
-
-                        _back_indx: int = output_path.rfind('/') + 1
-                        cv.imwrite(output_path[:_back_indx] + 'postprocessing_' + output_path[_back_indx:], crop_img)
+                        postprocessing(output_path=output_path, crop_weights=data["сrop_weights"])
                 else:
                     cv.imwrite(args["output"].pop(0), result)
 

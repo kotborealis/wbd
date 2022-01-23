@@ -34,5 +34,14 @@ def apply_brightness_contrast(input_img: ndarray, brightness: Union[int, float] 
     return buf
 
 
-# def postprocessing(input, brightness=0, contrast=0):
-#     return apply_brightness_contrast(input, brightness, contrast)
+def postprocessing(output_path: str, crop_weights: list):
+    img = cv2.imread(output_path)
+
+    # crop_weights[0] - up/down coefficients.
+    # crop_weights[1] - left/right coefficients.
+    original_shape: tuple = img.shape
+    crop_img = img[crop_weights[0][0]:original_shape[0] + crop_weights[0][1],
+               crop_weights[1][0]:original_shape[1] + crop_weights[1][1]]
+
+    _back_indx: int = output_path.rfind('/') + 1
+    cv2.imwrite(output_path[:_back_indx] + 'postprocessing_' + output_path[_back_indx:], crop_img)
