@@ -140,6 +140,8 @@ def save(output_filename: str, labels, palette: np.ndarray, dpi: tuple):
 
     output_img = Image.fromarray(labels, 'P')
     output_img.putpalette(palette.flatten())
+    if output_img.mode != 'RGB':
+        output_img = output_img.convert('RGB')
     output_img.save(output_filename, dpi=dpi)
 
 
