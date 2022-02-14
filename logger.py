@@ -1,18 +1,22 @@
 import logging
 
 
-class Logger(object):
-    # Закрыть доступ на переопределение init
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(Logger, cls).__new__(cls)
-        return cls.instance
+class Singleton(type):
+    _instances = {}
 
+    def __call__(cls, *args, **kwargs):
+        print("call")
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Logger(metaclass=Singleton):
     def __init__(self, level=logging.INFO,
                  formatter='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                  handler=None):
         import sys
-
+        print("init")
         self.logger = logging.getLogger('WBDLogger')
         self.logger.setLevel(level)
 
@@ -34,3 +38,4 @@ class Logger(object):
 
     def error(self, msg):
         self.logger.error(msg)
+
