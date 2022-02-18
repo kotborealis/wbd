@@ -11,8 +11,6 @@ import requests
 import cv2 as cv
 import numpy as np
 
-from wbd import board_calibration, four_point_transform, \
-    apply_brightness_contrast, postprocessing, unsharp_mask, UnsupportedBoardMode
 from calibration import undistort_img
 from wbdlogger import WBDLogger
 
@@ -52,6 +50,7 @@ else:
     sys.exit(1)
 
 if args["calibrate"]:
+    from wbd import board_calibration
     h, w = original.shape[:2]
     w_ = 1080
     h_ = 720
@@ -73,6 +72,9 @@ if args["calibrate"]:
         ROOT_LOGGER.info("Expected 4 points, got " + str(len(points)))
 
 elif args["mode"]:
+    from wbd import postprocessing, four_point_transform, \
+        apply_brightness_contrast, unsharp_mask, UnsupportedBoardMode
+
     idx = 0
     for mode in args["mode"]:
         coefficients_filename: Optional[str] = None
