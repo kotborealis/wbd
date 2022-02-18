@@ -1,7 +1,5 @@
 """
-Image postprocessing.
-
-apply_brightness_contrast: https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
+Image postprocessing module.
 """
 import os
 
@@ -13,6 +11,9 @@ import cv2
 from ds_utils import load, pack_rgb, unpack_rgb
 from scipy.cluster.vq import kmeans, vq
 from PIL import Image
+from wbdlogger import WBDLogger
+
+logger = WBDLogger()
 
 
 def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
@@ -26,6 +27,7 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
     :param crop_weights: веса для обрезки кадра.
     :param tmp_dir: временная директория для хранения промежуточных этапов постобработки
     """
+    logger.info("postprocessing")
     # Prepare image - crop it, to leave only the whiteboard
     img = cv2.imread(output_path)
 
@@ -57,6 +59,7 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
+    logger.info("Увеличиваем чёткость изображения")
     blurred = cv2.GaussianBlur(image, kernel_size, sigma)
     sharpened = float(amount + 1) * image - float(amount) * blurred
     sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
@@ -78,6 +81,8 @@ def apply_brightness_contrast(input_img: np.ndarray, brightness: Union[int, floa
     :param contrast: коэффициент контраста.
     """
     if brightness != 0:
+        logger.info(f"Увеличиваем яркость на {brightness}%")
+
         if brightness > 0:
             shadow = brightness
             highlight = 255
@@ -92,6 +97,8 @@ def apply_brightness_contrast(input_img: np.ndarray, brightness: Union[int, floa
         buf = input_img.copy()
 
     if contrast != 0:
+        logger.info(f"Увеличиваем контраст на {contrast}%")
+
         f = 131 * (contrast + 127) / (127 * (131 - contrast))
         alpha_c = f
         gamma_c = 127 * (1 - f)
