@@ -17,7 +17,7 @@ class WBDLogger(metaclass=Singleton):
 
     def __init__(self, level=logging.INFO,
                  formatter=FORMATTER,
-                 handler=None):
+                 handler=logging.FileHandler('spam.log')):
         import sys
         self.logger = logging.getLogger('WBDLogger')
         self.logger.setLevel(level)
