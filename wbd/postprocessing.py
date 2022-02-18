@@ -1,7 +1,5 @@
 """
-Image postprocessing.
-
-apply_brightness_contrast: https://stackoverflow.com/questions/39308030/how-do-i-increase-the-contrast-of-an-image-in-python-opencv
+Image postprocessing module.
 """
 import os
 
@@ -13,6 +11,9 @@ import cv2
 from ds_utils import load, pack_rgb, unpack_rgb
 from scipy.cluster.vq import kmeans, vq
 from PIL import Image
+from wbdlogger import WBDLogger
+
+logger = WBDLogger()
 
 
 def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
@@ -26,6 +27,7 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
     :param crop_weights: веса для обрезки кадра.
     :param tmp_dir: временная директория для хранения промежуточных этапов постобработки
     """
+    logger.info("Начинаю постобработку")
     # Prepare image - crop it, to leave only the whiteboard
     img = cv2.imread(output_path)
 
@@ -37,6 +39,7 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
 
     tmp_filename = os.path.join(tmp_dir, f'tmp_{str(int(time()))}.png')
     cv2.imwrite(tmp_filename, crop_img)
+    logger.info("Записан временный файл с обрезанным изображением")
 
     # Postprocessing
     img_np = load(tmp_filename)
@@ -51,12 +54,14 @@ def postprocessing(output_path: str, crop_weights: list, tmp_dir: str):
     output_filename = output_path[:_back_indx] + 'postprocessing_' + output_path[_back_indx:]
     save(output_filename, labels, palette, (300, 300))
 
+    logger.info(f"Postprocessing окончен. Изображение сохранено по адресу: {output_filename}")
     if os.path.exists(tmp_filename):
         os.remove(tmp_filename)
 
 
 def unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
     """Return a sharpened version of the image, using an unsharp mask."""
+    logger.info("Увеличиваем чёткость изображения")
     blurred = cv2.GaussianBlur(image, kernel_size, sigma)
     sharpened = float(amount + 1) * image - float(amount) * blurred
     sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
@@ -78,6 +83,8 @@ def apply_brightness_contrast(input_img: np.ndarray, brightness: Union[int, floa
     :param contrast: коэффициент контраста.
     """
     if brightness != 0:
+        logger.info(f"Увеличиваем яркость на {brightness}%")
+
         if brightness > 0:
             shadow = brightness
             highlight = 255
@@ -92,6 +99,8 @@ def apply_brightness_contrast(input_img: np.ndarray, brightness: Union[int, floa
         buf = input_img.copy()
 
     if contrast != 0:
+        logger.info(f"Увеличиваем контраст на {contrast}%")
+
         f = 131 * (contrast + 127) / (127 * (131 - contrast))
         alpha_c = f
         gamma_c = 127 * (1 - f)
@@ -126,8 +135,8 @@ def save(output_filename: str, labels, palette: np.ndarray, dpi: tuple):
     :param dpi: dpi выходного изображения
     :return:
     """
-
     # Saturate img
+    logger.info("Насыщение палитры - подбор более ярких цветов")
     palette = palette.astype(np.float32)
     pmin = palette.min()
     pmax = palette.max()
@@ -135,6 +144,7 @@ def save(output_filename: str, labels, palette: np.ndarray, dpi: tuple):
     palette = palette.astype(np.uint8)
 
     # Make white background
+    logger.info("Перевод фона в белый цвет")
     palette = palette.copy()
     palette[0] = (250, 250, 250)
 
@@ -151,16 +161,18 @@ def apply_palette(img, palette):
     The first step is to set all background pixels to the background color;
     then, nearest-neighbor matching is used to map each foreground color to the closest one in the palette.
     """
-
+    logger.info("Применение палитры")
     bg_color = tuple(palette[0])
 
     fg_mask = get_foreground_mask(bg_color, img.reshape(-1, 3))
     orig_shape = img.shape
+    logger.info("Фоновые пиксели отмечены")
 
     pixels = img.reshape((-1, 3))
     fg_mask = fg_mask.flatten()
     num_pixels = pixels.shape[0]
 
+    logger.info("Сопоставление каждого цвета переднего плана с ближайшим цветом в палитре")
     labels = np.zeros(num_pixels, dtype=np.uint8)
     labels[fg_mask], _ = vq(pixels[fg_mask], palette)
 
@@ -177,7 +189,11 @@ def get_palette(sample: np.ndarray, num_colors: int = 25, kmeans_iter: int = 250
 
     :return: палитра цветов, найденных в sample, в количестве num_colors
     """
+    logger.info("Подготовка палитры")
+
     bg_color: tuple = get_bg_color(img=sample, bits_per_channel=6)
+    logger.info(f"Фон определён: {str(bg_color)}")
+
     fg_mask: np.ndarray = get_foreground_mask(bg_color, sample)
 
     centers, _ = kmeans(sample[fg_mask].astype(np.float32),
@@ -228,6 +244,7 @@ def sample_pixels(img: np.ndarray, pixels_percent: int = 40) -> np.ndarray:
 
     :return: выборка пикселей в размере pixels_percent % от исходного img
     """
+    logger.info("Готовим sample для определения фона")
     pixels = img.reshape((-1, 3))
     num_pixels = pixels.shape[0]
 
@@ -248,7 +265,7 @@ def get_bg_color(img: np.ndarray, bits_per_channel=6) -> Tuple[int]:
 
     :return: 24-х битный RGB триплет с фоновым цветом
     """
-
+    logger.info("Поиск цвета фона")
     # Проверка трёхслойности изображения
     assert img.shape[-1] == 3
 

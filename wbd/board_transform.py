@@ -23,7 +23,8 @@ def order_points(pts):
     return rect
 
 
-def four_point_transform(image, pts, aspectRatio, mode):
+def four_point_transform(image, pts, aspectRatio, mode, logger):
+    logger.info("Обрезаем изображение")
     # obtain a consistent order of the points and unpack them
     # individually
     rect = order_points(pts)
@@ -75,6 +76,7 @@ def four_point_transform(image, pts, aspectRatio, mode):
             [0, maxHeight - 1]], dtype="float32")
     # ----------------------------------
 
+    logger.info("Применяем преобразование со стороны птичьего полёта")
     # compute the perspective transform matrix and then apply it
     M = cv.getPerspectiveTransform(rect, dst)
     warped = cv.warpPerspective(image, M, (maxWidth, maxHeight))
