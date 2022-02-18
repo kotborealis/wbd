@@ -33,3 +33,9 @@ Crops and corrects perspective of whiteboard from image.
 **Postprocessing. Left board**
 
 <img src="readme_photos/postprocessing_left.png" width="500">
+
+##Local launch
+
+``` bash
+python3 wbd.py --image-path readme_photos/original.jpeg --mode right --output right.png
+```
