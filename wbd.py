@@ -17,6 +17,7 @@ from calibration import undistort_img
 from wbdlogger import WBDLogger
 
 TMP_DIR = os.path.join('.', 'local')
+Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--image-path', help='Grab image from specified file')
@@ -96,6 +97,7 @@ elif args["mode"]:
                                           aspectRatio=data["aspectRatio"],
                                           mode=mode.lower(),
                                           logger=ROOT_LOGGER)
+
             result = unsharp_mask(image=result)
             result = apply_brightness_contrast(result, data["brightness"], data["contrast"])
 
