@@ -179,7 +179,7 @@ def apply_palette(img, palette):
     return labels.reshape(orig_shape[:-1])
 
 
-def get_palette(sample: np.ndarray, num_colors: int = 25, kmeans_iter: int = 250) -> np.ndarray:
+def get_palette(sample: np.ndarray, num_colors: int = 20, kmeans_iter: int = 200) -> np.ndarray:
     """
     Позволяет получить палитру из num_colors наиболее часто встречающихся цветов
 

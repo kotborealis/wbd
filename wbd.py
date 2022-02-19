@@ -79,7 +79,7 @@ elif args["mode"]:
     for mode in args["mode"]:
         coefficients_filename: Optional[str] = None
 
-        ROOT_LOGGER.info(f"Mode: {args['mode']}")
+        ROOT_LOGGER.info(f"Mode: {mode}")
 
         if mode == 'right':
             coefficients_filename = './board_right.json'
